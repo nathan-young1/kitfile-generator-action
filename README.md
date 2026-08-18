@@ -7,7 +7,7 @@ This GitHub Action scans your repo, generates a `Kitfile` with the [Kit CLI](htt
 1. Installs the Kit CLI on the runner
 2. Runs `kit init .` against your repo to auto-generate a `Kitfile`
 3. Validates the generated `Kitfile` by packing it locally (this is just a local sanity check, no registry or login is required)
-4. Opens a pull request adding the `Kitfile` to your repo, if one doesn't already exist or has changed
+4. Opens a pull request adding the new or updated `Kitfile` to your repo, if one doesn't already exist or your repo contents has changed. If nothing changed, the action finishes successfully with no PR opened.
 
 ## Usage
 
@@ -20,6 +20,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths-ignore:
+      - 'Kitfile'
 
 concurrency:
   group: kitfile-generator-${{ github.ref }}
@@ -36,7 +38,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: nathan-young1/kitfile-generator-action@v1
 ```
-Note: `workflow_dispatch` is included so you can also trigger a Kitfile generation manually.
+
+Notes:
+- `workflow_dispatch` is included so you can also trigger a Kitfile generation manually.
+- `paths-ignore: ['Kitfile']` stops the workflow from re-triggering itself when one of this action's own PRs gets merged back into `main`. Since that merge only touches the `Kitfile`, there's nothing new to scan for.
+
+## One-time repo setup (required)
+ 
+Before this action can open pull requests, two settings need to be enabled on the repo you're installing it into. Go to **Settings → Actions → General → Workflow permissions**:
+ 
+1. Select **"Read and write permissions"** (the default on many repos is read-only, which silently overrides the `permissions:` block in the workflow above)
+2. Check **"Allow GitHub Actions to create and approve pull requests"**
+3. Click **Save**
+Without both of these, the action will fail at the "Open pull request" step.
 
 ## Inputs
 
@@ -66,7 +80,7 @@ permissions:
   pull-requests: write
 ```
 
-Without these, the action can generate the `Kitfile` but will fail to open the PR.
+Without these, the action can generate the `Kitfile` but will fail to open the PR. (See also the one-time repo setup section above as the workflow-level `permissions:` block alone isn't enough on repos with read-only defaults.)
 
 ## What "validate" means here
 
@@ -81,6 +95,8 @@ The example workflow above includes a `concurrency` block. This matters because 
 ## Troubleshooting
 
 - **No PR opens on a run:** this is expected if `kit init .` produced no changes to the `Kitfile` (i.e. it's already up to date). [`create-pull-request`](https://github.com/peter-evans/create-pull-request), used internally, only opens a PR when there's an actual diff.
+- **`Error: GitHub Actions is not permitted to create or approve pull requests`:** see the "One-time repo setup" section above on how to enable "Allow GitHub Actions to create and approve pull requests" in repo settings.
+- **PR step fails even with `permissions: pull-requests: write` set:** the repo-level default under Settings → Actions → General is likely set to read-only, which overrides the workflow file's `permissions:` block. Switch it to "Read and write permissions."
 - **`kit pack` validation fails:** this usually means the generated `Kitfile` references paths or artifacts `kit init` couldn't fully resolve. Run `kit init .` and `kit pack .` locally to debug.
 
 ## License
