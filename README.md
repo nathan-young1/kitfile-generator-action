@@ -36,6 +36,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: nathan-young1/kitfile-generator-action@v1
 ```
+Note: `workflow_dispatch` is included so you can also trigger a Kitfile generation manually.
 
 ## Inputs
 
