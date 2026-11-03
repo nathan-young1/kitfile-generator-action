@@ -1,5 +1,7 @@
 # KitOps Kitfile Generator
 
+[![Packaged with KitOps](https://img.shields.io/badge/Packaged%20with-KitOps-FFAF52?labelColor=363636)](https://kitops.org)
+
 This GitHub Action scans your repo, generates a `Kitfile` with the [Kit CLI](https://github.com/kitops-ml/kitops), validates it with `kit pack`, and opens a pull request adding the Kitfile to your repo.
 
 ## What it does
